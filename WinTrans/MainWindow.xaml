@@ -18,15 +18,24 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- API key row -->
-        <Grid Grid.Row="0" ColumnSpacing="8">
+        <!-- API key + Base URL -->
+        <Grid Grid.Row="0" ColumnSpacing="8" RowSpacing="6">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="2*"/>
+                <ColumnDefinition Width="3*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
-            <PasswordBox x:Name="ApiKeyBox" Header="Claude API Key" PlaceholderText="sk-ant-..." />
-            <Button Grid.Column="1" x:Name="SaveKeyButton" VerticalAlignment="Bottom"
-                    Content="Сохранить ключ" Click="SaveKeyButton_Click"/>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            <PasswordBox Grid.Column="0" x:Name="ApiKeyBox"
+                         Header="Claude API Key" PlaceholderText="sk-ant-..." />
+            <TextBox Grid.Column="1" x:Name="BaseUrlBox"
+                     Header="API Base URL"
+                     PlaceholderText="https://api.anthropic.com"
+                     Text="https://api.anthropic.com"/>
+            <Button Grid.Column="2" x:Name="SaveKeyButton" VerticalAlignment="Bottom"
+                    Content="Сохранить" Click="SaveKeyButton_Click"/>
         </Grid>
 
         <!-- Settings row: target language + style -->

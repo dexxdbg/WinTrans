@@ -14,12 +14,16 @@ public class ClaudeApiClient
         Timeout = TimeSpan.FromSeconds(60)
     };
 
-    private const string Endpoint = "https://api.anthropic.com/v1/messages";
+    private const string DefaultBaseUrl = "https://api.anthropic.com";
     private const string Model = "claude-sonnet-4-5";
     private const string AnthropicVersion = "2023-06-01";
 
-    public async Task<string> TranslateAsync(string apiKey, string text, string targetLanguage, string style)
+    public async Task<string> TranslateAsync(string apiKey, string text, string targetLanguage, string style,
+        string? baseUrl = null)
     {
+        var root = string.IsNullOrWhiteSpace(baseUrl) ? DefaultBaseUrl : baseUrl.TrimEnd('/');
+        var endpoint = root + "/v1/messages";
+
         var systemPrompt =
             "You are a professional translator. " +
             $"Translate the user's text into: {targetLanguage}. " +
@@ -40,7 +44,7 @@ public class ClaudeApiClient
 
         var json = JsonSerializer.Serialize(payload);
 
-        using var request = new HttpRequestMessage(HttpMethod.Post, Endpoint)
+        using var request = new HttpRequestMessage(HttpMethod.Post, endpoint)
         {
             Content = new StringContent(json, Encoding.UTF8, "application/json")
         };

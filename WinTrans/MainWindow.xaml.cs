@@ -28,6 +28,8 @@ public sealed partial class MainWindow : Window
         var saved = _settings.Load();
         if (!string.IsNullOrEmpty(saved.ApiKey))
             ApiKeyBox.Password = saved.ApiKey;
+        if (!string.IsNullOrWhiteSpace(saved.BaseUrl))
+            BaseUrlBox.Text = saved.BaseUrl;
         if (saved.LanguageIndex >= 0 && saved.LanguageIndex < LanguageBox.Items.Count)
             LanguageBox.SelectedIndex = saved.LanguageIndex;
         if (saved.StyleIndex >= 0 && saved.StyleIndex < StyleBox.Items.Count)
@@ -160,7 +162,8 @@ public sealed partial class MainWindow : Window
             var language = GetSelectedLanguage();
             var style = GetSelectedStyle();
 
-            var translation = await _claude.TranslateAsync(apiKey, text, language, style);
+            var baseUrl = BaseUrlBox.Text?.Trim() ?? "";
+            var translation = await _claude.TranslateAsync(apiKey, text, language, style, baseUrl);
 
             ResultBox.Text = translation;
             StatusText.Text = "Готово";
@@ -187,6 +190,7 @@ public sealed partial class MainWindow : Window
         _settings.Save(new AppSettings
         {
             ApiKey = ApiKeyBox.Password ?? "",
+            BaseUrl = (BaseUrlBox.Text ?? "").Trim(),
             LanguageIndex = LanguageBox.SelectedIndex,
             StyleIndex = StyleBox.SelectedIndex
         });

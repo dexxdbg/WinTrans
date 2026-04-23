@@ -7,6 +7,7 @@ namespace WinTrans.Services;
 public class AppSettings
 {
     public string ApiKey { get; set; } = "";
+    public string BaseUrl { get; set; } = "https://api.anthropic.com";
     public int LanguageIndex { get; set; } = 0;
     public int StyleIndex { get; set; } = 0;
 }
