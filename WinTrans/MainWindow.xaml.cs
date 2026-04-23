@@ -108,8 +108,9 @@ public sealed partial class MainWindow : Window
         {
             SourceBox.Text = selected;
             StatusText.Text = "Получен выделенный текст, переводим...";
-            // 4. Автоматически запускаем перевод и вставку назад
-            await TranslateAsync(autoPasteBack: true);
+            // Переводим и показываем результат. Окно остаётся открытым,
+            // ничего никуда автоматически не вставляем.
+            await TranslateAsync(autoPasteBack: false);
         }
         else
         {
