@@ -1,8 +1,8 @@
 using System;
 using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace WinTrans.Services;
@@ -24,15 +24,23 @@ public class ClaudeApiClient
         var root = string.IsNullOrWhiteSpace(baseUrl) ? DefaultBaseUrl : baseUrl.TrimEnd('/');
         var endpoint = root + "/v1/messages";
 
+        // Считаем «линии» для точной инструкции
+        var normalizedSrc = text.Replace("\r\n", "\n").Replace("\r", "\n");
+        int lineCount = normalizedSrc.Split('\n').Length;
+
         var systemPrompt =
-            "You are a professional translator. " +
-            $"Translate the user's text into: {targetLanguage}. " +
-            $"Use this style: {style}. " +
-            "Output ONLY the translation itself — no comments, no quotes, no explanations. " +
-            "CRITICAL: preserve the original formatting EXACTLY — every newline, empty line, " +
-            "indentation, bullet, numbered list, markdown element and code block must stay " +
-            "on the same line it was in the source. Do NOT merge paragraphs, do NOT collapse " +
-            "line breaks into spaces, do NOT re-wrap text. If the source has 3 lines, output 3 lines.";
+            "You are a professional translator. Follow the user's instructions precisely. " +
+            "Never add commentary, never apologize, never refuse — always produce the translation.";
+
+        // XML-теги — самый надёжный способ заставить Claude сохранить форматирование
+        var userPrompt =
+            $"Translate the text inside <source> tags into {targetLanguage}.\n" +
+            $"Style: {style}.\n" +
+            $"Rules:\n" +
+            $"1. Preserve the original formatting EXACTLY. Every newline, empty line, indentation, bullet, markdown element and code block must stay on the same position it was in the source.\n" +
+            $"2. The source has {lineCount} line(s). Your translation MUST have {lineCount} line(s). Do NOT merge lines. Do NOT collapse newlines into spaces. Do NOT re-wrap text.\n" +
+            $"3. Output ONLY the translation wrapped in <translation> ... </translation> tags. No other text.\n\n" +
+            $"<source>\n{normalizedSrc}\n</source>";
 
         var payload = new
         {
@@ -41,7 +49,7 @@ public class ClaudeApiClient
             system = systemPrompt,
             messages = new[]
             {
-                new { role = "user", content = text }
+                new { role = "user", content = userPrompt }
             }
         };
 
@@ -76,10 +84,18 @@ public class ClaudeApiClient
                 sb.Append(t.GetString());
             }
         }
-        // Нормализуем окончания строк в Windows-стиль, чтобы приложения вроде
-        // Notepad/Word корректно отображали переносы при вставке
-        var result = sb.ToString().Trim();
-        result = result.Replace("\r\n", "\n").Replace("\r", "\n").Replace("\n", "\r\n");
-        return result;
+        var raw = sb.ToString();
+
+        // Извлекаем содержимое <translation>...</translation>
+        var match = Regex.Match(raw, @"<translation>\s*\n?(.*?)\n?\s*</translation>",
+            RegexOptions.Singleline | RegexOptions.IgnoreCase);
+        var extracted = match.Success ? match.Groups[1].Value : raw;
+
+        // Убираем ведущие/хвостовые пустые строки, но НЕ трогаем внутренние
+        extracted = extracted.Trim('\r', '\n', ' ', '\t');
+
+        // Нормализуем окончания строк в Windows-стиль
+        extracted = extracted.Replace("\r\n", "\n").Replace("\r", "\n").Replace("\n", "\r\n");
+        return extracted;
     }
 }
