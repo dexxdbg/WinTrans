@@ -215,7 +215,8 @@ public sealed partial class MainWindow : Window
     private async void PasteReplaceButton_Click(object sender, RoutedEventArgs e)
     {
         if (string.IsNullOrEmpty(ResultBox.Text)) return;
-        await ClipboardHelper.SetTextAndPasteBackAsync(ResultBox.Text, this);
+        // Кнопка — скрываем и вставляем, окно не возвращаем
+        await ClipboardHelper.SetTextAndPasteBackAsync(ResultBox.Text, this, restoreOurWindow: false);
     }
 
     private void HideButton_Click(object sender, RoutedEventArgs e)
