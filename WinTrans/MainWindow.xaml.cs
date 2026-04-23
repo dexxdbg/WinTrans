@@ -13,9 +13,9 @@ public sealed partial class MainWindow : Window
     private readonly ClaudeApiClient _claude = new();
     private readonly SettingsStore _settings = new();
 
-    // Ctrl+Alt+T -> MOD_CONTROL (0x0002) | MOD_ALT (0x0001), VK_T = 0x54
-    private const uint MOD_ALT = 0x0001;
+    // Ctrl+Shift+T -> MOD_CONTROL (0x0002) | MOD_SHIFT (0x0004), VK_T = 0x54
     private const uint MOD_CONTROL = 0x0002;
+    private const uint MOD_SHIFT = 0x0004;
     private const uint VK_T = 0x54;
 
     public MainWindow()
@@ -44,14 +44,14 @@ public sealed partial class MainWindow : Window
         _hotkeyManager = new HotkeyManager(this);
         _hotkeyManager.HotkeyPressed += OnHotkeyPressedAsync;
 
-        bool ok = _hotkeyManager.Register(MOD_CONTROL | MOD_ALT, VK_T);
+        bool ok = _hotkeyManager.Register(MOD_CONTROL | MOD_SHIFT, VK_T);
         if (ok)
         {
-            StatusText.Text = "Готово. Горячая клавиша: Ctrl+Alt+T";
+            StatusText.Text = "Готово. Горячая клавиша: Ctrl+Shift+T";
         }
         else
         {
-            StatusText.Text = "НЕ удалось зарегистрировать Ctrl+Alt+T — " +
+            StatusText.Text = "НЕ удалось зарегистрировать Ctrl+Shift+T — " +
                               "комбинацию уже держит другое приложение. " +
                               "Закрой его или поменяй хоткей в коде.";
         }
