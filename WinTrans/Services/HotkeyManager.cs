@@ -6,16 +6,18 @@ using Microsoft.UI.Xaml;
 namespace WinTrans.Services;
 
 /// <summary>
-/// Регистрирует глобальный хоткей через RegisterHotKey на HWND окна
-/// и слушает WM_HOTKEY через SetWindowSubclass.
+/// Субклассирует HWND окна WinUI3, слушает WM_HOTKEY и WM_TRAYICON,
+/// даёт управление RegisterHotKey и (опционально) трею.
 /// </summary>
 public class HotkeyManager : IDisposable
 {
     public event Action? HotkeyPressed;
+    /// <summary>Вызывается ДО диспатча — в момент прихода системного сообщения трея.</summary>
+    public Func<IntPtr, IntPtr, bool>? TrayMessageHandler;
 
     private const int HOTKEY_ID = 0xB00B;
 
-    private readonly IntPtr _hwnd;
+    public IntPtr Hwnd { get; }
     private readonly DispatcherQueue _dispatcher;
     private readonly SUBCLASSPROC _subclassProc;
     private bool _registered;
@@ -37,15 +39,15 @@ public class HotkeyManager : IDisposable
 
     public HotkeyManager(Window window)
     {
-        _hwnd = WinRT.Interop.WindowNative.GetWindowHandle(window);
+        Hwnd = WinRT.Interop.WindowNative.GetWindowHandle(window);
         _dispatcher = window.DispatcherQueue;
         _subclassProc = WndProc;
-        _subclassed = SetWindowSubclass(_hwnd, _subclassProc, UIntPtr.Zero, UIntPtr.Zero);
+        _subclassed = SetWindowSubclass(Hwnd, _subclassProc, UIntPtr.Zero, UIntPtr.Zero);
     }
 
     public bool Register(uint modifiers, uint vk)
     {
-        _registered = Win32.RegisterHotKey(_hwnd, HOTKEY_ID, modifiers, vk);
+        _registered = Win32.RegisterHotKey(Hwnd, HOTKEY_ID, modifiers, vk);
         if (!_registered)
         {
             int err = Marshal.GetLastWin32Error();
@@ -59,10 +61,17 @@ public class HotkeyManager : IDisposable
     {
         if (uMsg == Win32.WM_HOTKEY && wParam.ToInt32() == HOTKEY_ID)
         {
-            // Возвращаемся на UI-поток, чтобы безопасно трогать XAML
             _dispatcher.TryEnqueue(() => HotkeyPressed?.Invoke());
             return IntPtr.Zero;
         }
+
+        if (uMsg == Win32.WM_TRAYICON && TrayMessageHandler is not null)
+        {
+            var handler = TrayMessageHandler;
+            _dispatcher.TryEnqueue(() => handler(wParam, lParam));
+            return IntPtr.Zero;
+        }
+
         return DefSubclassProc(hWnd, uMsg, wParam, lParam);
     }
 
@@ -70,12 +79,12 @@ public class HotkeyManager : IDisposable
     {
         if (_registered)
         {
-            Win32.UnregisterHotKey(_hwnd, HOTKEY_ID);
+            Win32.UnregisterHotKey(Hwnd, HOTKEY_ID);
             _registered = false;
         }
         if (_subclassed)
         {
-            RemoveWindowSubclass(_hwnd, _subclassProc, UIntPtr.Zero);
+            RemoveWindowSubclass(Hwnd, _subclassProc, UIntPtr.Zero);
             _subclassed = false;
         }
     }

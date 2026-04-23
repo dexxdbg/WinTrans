@@ -11,7 +11,6 @@ public partial class App : Application
         this.InitializeComponent();
         this.UnhandledException += (s, e) =>
         {
-            // чтобы приложение не падало молча
             System.Diagnostics.Debug.WriteLine("UNHANDLED: " + e.Exception);
             e.Handled = true;
         };
@@ -20,9 +19,10 @@ public partial class App : Application
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
         MainAppWindow = new MainWindow();
-        // ВАЖНО: Activate() обязателен, иначе окно не создаёт HWND
-        // полностью и не получает сообщения (в т.ч. WM_HOTKEY).
+
+        // Активируем и тут же прячем — иначе HWND не готов ловить WM_HOTKEY.
+        // Вспышки не должно быть т.к. Activate + SW_HIDE идут подряд до первого рендера.
         MainAppWindow.Activate();
-        MainAppWindow.InitializeHotkey();
+        MainAppWindow.InitializeHotkey(); // регистрирует хоткей, трей и HideWindow()
     }
 }

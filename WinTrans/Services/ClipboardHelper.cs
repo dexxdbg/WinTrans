@@ -8,7 +8,8 @@ namespace WinTrans.Services;
 public static class ClipboardHelper
 {
     /// <summary>
-    /// Сохраняет текущее содержимое буфера, шлёт Ctrl+C активному окну,
+    /// ВАЖНО: вызывать, когда фокус ещё у исходного окна (наше окно скрыто).
+    /// Сохраняет текущее содержимое буфера, шлёт Ctrl+C,
     /// читает выделенный текст, возвращает буфер обратно.
     /// </summary>
     public static async Task<string?> GetSelectedTextAsync()
@@ -22,17 +23,18 @@ public static class ClipboardHelper
         }
         catch { /* ignore */ }
 
-        // Очищаем, чтобы отличить «ничего не выделено» от старого содержимого
+        // Чистим, чтобы отличить «ничего не выделено» от старого содержимого
         try { Clipboard.Clear(); } catch { }
 
-        // Небольшая задержка, чтобы окно, с которого сработал хоткей, успело снова получить фокус
-        await Task.Delay(80);
+        // Даём фокус успеть вернуться исходному окну и модификаторам хоткея —
+        // отпуститься естественным путём
+        await Task.Delay(120);
 
-        // Эмулируем Ctrl+C в активное окно (которое ещё активно — наше не показано)
-        Win32.SendKeyCombo(Win32.VK_CONTROL, Win32.VK_C);
+        // Эмулируем Ctrl+C (SendCtrlCombo сам отпустит залипшие Shift/Alt/Win/Ctrl)
+        Win32.SendCtrlCombo(Win32.VK_C);
 
         // Ждём пока буфер обновится
-        await Task.Delay(150);
+        await Task.Delay(200);
 
         string? selected = null;
         try
@@ -43,7 +45,8 @@ public static class ClipboardHelper
         }
         catch { }
 
-        // Восстанавливаем предыдущее содержимое буфера
+        // Восстанавливаем предыдущее содержимое буфера (с небольшой задержкой,
+        // чтобы не перебить наш только что прочитанный selected)
         if (!string.IsNullOrEmpty(previous))
         {
             try
@@ -74,9 +77,9 @@ public static class ClipboardHelper
         Win32.ShowWindow(ourHwnd, Win32.SW_HIDE);
 
         // 3. Небольшая задержка — система сама вернёт фокус предыдущему окну
-        await Task.Delay(120);
+        await Task.Delay(150);
 
         // 4. Эмулируем Ctrl+V
-        Win32.SendKeyCombo(Win32.VK_CONTROL, Win32.VK_V);
+        Win32.SendCtrlCombo(Win32.VK_V);
     }
 }

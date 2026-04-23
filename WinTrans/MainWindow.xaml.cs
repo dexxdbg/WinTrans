@@ -1,15 +1,16 @@
 using System;
 using System.Threading.Tasks;
-using WinTrans.Services;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Windows.ApplicationModel.DataTransfer;
+using WinTrans.Services;
 
 namespace WinTrans;
 
 public sealed partial class MainWindow : Window
 {
     private HotkeyManager? _hotkeyManager;
+    private TrayIcon? _tray;
     private readonly ClaudeApiClient _claude = new();
     private readonly SettingsStore _settings = new();
 
@@ -32,11 +33,22 @@ public sealed partial class MainWindow : Window
         if (saved.StyleIndex >= 0 && saved.StyleIndex < StyleBox.Items.Count)
             StyleBox.SelectedIndex = saved.StyleIndex;
 
-        // По умолчанию окно скрыто, его откроет хоткей
+        // Перехватываем «Закрыть» (крестик) → прячем в трей вместо выхода
+        this.AppWindow.Closing += AppWindow_Closing;
+
         this.Closed += (s, e) =>
         {
+            _tray?.Dispose();
             _hotkeyManager?.Dispose();
         };
+    }
+
+    private void AppWindow_Closing(Microsoft.UI.Windowing.AppWindow sender,
+        Microsoft.UI.Windowing.AppWindowClosingEventArgs args)
+    {
+        // Не даём окну закрыться — вместо этого скрываем в трей
+        args.Cancel = true;
+        HideWindow();
     }
 
     public void InitializeHotkey()
@@ -52,26 +64,54 @@ public sealed partial class MainWindow : Window
         else
         {
             StatusText.Text = "НЕ удалось зарегистрировать Ctrl+Shift+T — " +
-                              "комбинацию уже держит другое приложение. " +
-                              "Закрой его или поменяй хоткей в коде.";
+                              "комбинацию уже держит другое приложение.";
         }
 
-        // окно оставляем открытым при старте, чтобы пользователь видел статус
+        // Создаём трей и подключаем к общему WndProc
+        _tray = new TrayIcon(_hotkeyManager.Hwnd, "WinTrans — Ctrl+Shift+T");
+        _tray.OpenRequested += ShowWindow;
+        _tray.ExitRequested += ExitApp;
+        _hotkeyManager.TrayMessageHandler = _tray.HandleMessage;
+
+        // Стартуем скрыто в трей
+        HideWindow();
+    }
+
+    private void ExitApp()
+    {
+        _tray?.Dispose();
+        _hotkeyManager?.Dispose();
+        Microsoft.UI.Xaml.Application.Current.Exit();
     }
 
     private async void OnHotkeyPressedAsync()
     {
-        // 1. Пробуем получить выделенный текст: шлём Ctrl+C активному окну
+        // 1. Прячем наше окно, если оно видимо — иначе Ctrl+C уйдёт в него,
+        //    а не в исходное приложение
+        var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
+        bool wasVisible = Win32.IsWindowVisible(hwnd);
+        if (wasVisible)
+        {
+            HideWindow();
+            await Task.Delay(120); // дать фокусу вернуться предыдущему окну
+        }
+
+        // 2. Пробуем получить выделенный текст из активного окна
         string? selected = await ClipboardHelper.GetSelectedTextAsync();
 
-        // 2. Показываем и активируем окно
+        // 3. Показываем наше окно
         ShowWindow();
 
         if (!string.IsNullOrWhiteSpace(selected))
         {
             SourceBox.Text = selected;
-            // 3. Автоматически запускаем перевод
+            StatusText.Text = "Получен выделенный текст, переводим...";
+            // 4. Автоматически запускаем перевод и вставку назад
             await TranslateAsync(autoPasteBack: true);
+        }
+        else
+        {
+            StatusText.Text = "Нет выделения — введи текст вручную";
         }
     }
 
@@ -127,7 +167,6 @@ public sealed partial class MainWindow : Window
 
             if (autoPasteBack && !string.IsNullOrWhiteSpace(translation))
             {
-                // Кладём в буфер и вставляем на место выделения в исходном окне
                 await ClipboardHelper.SetTextAndPasteBackAsync(translation, this);
             }
         }
