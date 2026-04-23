@@ -1,4 +1,4 @@
-# Claude Translator (WinUI 3)
+# WinTrans (WinUI 3)
 
 Глобальный переводчик через API Claude. По нажатию **Win+T**:
 
@@ -12,7 +12,7 @@
   литературный, юридический, маркетинговый, сленг).
 
 API-ключ и выбор языка/стиля сохраняются в
-`%APPDATA%\ClaudeTranslator\settings.json`.
+`%APPDATA%\WinTrans\settings.json`.
 
 ## Требования
 
@@ -23,7 +23,7 @@ API-ключ и выбор языка/стиля сохраняются в
 ## Сборка
 
 ```powershell
-cd ClaudeTranslator
+cd WinTrans
 dotnet restore
 dotnet build -c Release
 ```
@@ -31,13 +31,13 @@ dotnet build -c Release
 ## Запуск
 
 ```powershell
-dotnet run -c Release --project ClaudeTranslator
+dotnet run -c Release --project WinTrans
 ```
 
 Или собрать exe:
 
 ```powershell
-dotnet publish ClaudeTranslator -c Release -r win-x64 --self-contained false
+dotnet publish WinTrans -c Release -r win-x64 --self-contained false
 ```
 
 ## Использование

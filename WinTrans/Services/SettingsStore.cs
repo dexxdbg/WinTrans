@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using System.Text.Json;
 
-namespace ClaudeTranslator.Services;
+namespace WinTrans.Services;
 
 public class AppSettings
 {
@@ -19,7 +19,7 @@ public class SettingsStore
     {
         var dir = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "ClaudeTranslator");
+            "WinTrans");
         Directory.CreateDirectory(dir);
         _path = Path.Combine(dir, "settings.json");
     }

@@ -2,7 +2,7 @@ using System;
 using System.Runtime.InteropServices;
 using Microsoft.UI.Xaml;
 
-namespace ClaudeTranslator.Services;
+namespace WinTrans.Services;
 
 /// <summary>
 /// Регистрирует глобальный хоткей через RegisterHotKey + сабклассирование окна WinUI3.

@@ -1,7 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace ClaudeTranslator.Services;
+namespace WinTrans.Services;
 
 internal static class Win32
 {

@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using Microsoft.UI.Xaml;
 using Windows.ApplicationModel.DataTransfer;
 
-namespace ClaudeTranslator.Services;
+namespace WinTrans.Services;
 
 public static class ClipboardHelper
 {

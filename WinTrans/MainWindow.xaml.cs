@@ -1,11 +1,11 @@
 using System;
 using System.Threading.Tasks;
-using ClaudeTranslator.Services;
+using WinTrans.Services;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Windows.ApplicationModel.DataTransfer;
 
-namespace ClaudeTranslator;
+namespace WinTrans;
 
 public sealed partial class MainWindow : Window
 {
@@ -20,7 +20,7 @@ public sealed partial class MainWindow : Window
     public MainWindow()
     {
         this.InitializeComponent();
-        this.Title = "Claude Translator";
+        this.Title = "WinTrans";
 
         // Подгружаем сохранённые настройки
         var saved = _settings.Load();
