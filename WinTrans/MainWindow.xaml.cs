@@ -43,10 +43,20 @@ public sealed partial class MainWindow : Window
     {
         _hotkeyManager = new HotkeyManager(this);
         _hotkeyManager.HotkeyPressed += OnHotkeyPressedAsync;
-        _hotkeyManager.Register(MOD_CONTROL | MOD_ALT, VK_T);
 
-        // Прячем окно на старте
-        HideWindow();
+        bool ok = _hotkeyManager.Register(MOD_CONTROL | MOD_ALT, VK_T);
+        if (ok)
+        {
+            StatusText.Text = "Готово. Горячая клавиша: Ctrl+Alt+T";
+        }
+        else
+        {
+            StatusText.Text = "НЕ удалось зарегистрировать Ctrl+Alt+T — " +
+                              "комбинацию уже держит другое приложение. " +
+                              "Закрой его или поменяй хоткей в коде.";
+        }
+
+        // окно оставляем открытым при старте, чтобы пользователь видел статус
     }
 
     private async void OnHotkeyPressedAsync()

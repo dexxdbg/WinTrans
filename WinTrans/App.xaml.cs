@@ -9,13 +9,20 @@ public partial class App : Application
     public App()
     {
         this.InitializeComponent();
+        this.UnhandledException += (s, e) =>
+        {
+            // чтобы приложение не падало молча
+            System.Diagnostics.Debug.WriteLine("UNHANDLED: " + e.Exception);
+            e.Handled = true;
+        };
     }
 
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
         MainAppWindow = new MainWindow();
-        // Не показываем окно сразу — ждём хоткей. Но сам Window нужно создать,
-        // чтобы жил MessagePump и работал RegisterHotKey.
+        // ВАЖНО: Activate() обязателен, иначе окно не создаёт HWND
+        // полностью и не получает сообщения (в т.ч. WM_HOTKEY).
+        MainAppWindow.Activate();
         MainAppWindow.InitializeHotkey();
     }
 }
