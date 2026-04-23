@@ -13,8 +13,9 @@ public sealed partial class MainWindow : Window
     private readonly ClaudeApiClient _claude = new();
     private readonly SettingsStore _settings = new();
 
-    // Win+T -> MOD_WIN (0x0008), VK_T = 0x54
-    private const uint MOD_WIN = 0x0008;
+    // Ctrl+Alt+T -> MOD_CONTROL (0x0002) | MOD_ALT (0x0001), VK_T = 0x54
+    private const uint MOD_ALT = 0x0001;
+    private const uint MOD_CONTROL = 0x0002;
     private const uint VK_T = 0x54;
 
     public MainWindow()
@@ -42,7 +43,7 @@ public sealed partial class MainWindow : Window
     {
         _hotkeyManager = new HotkeyManager(this);
         _hotkeyManager.HotkeyPressed += OnHotkeyPressedAsync;
-        _hotkeyManager.Register(MOD_WIN, VK_T);
+        _hotkeyManager.Register(MOD_CONTROL | MOD_ALT, VK_T);
 
         // Прячем окно на старте
         HideWindow();

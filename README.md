@@ -1,6 +1,6 @@
 # WinTrans (WinUI 3)
 
-Глобальный переводчик через API Claude. По нажатию **Win+T**:
+Глобальный переводчик через API Claude. По нажатию **Ctrl+Alt+T**:
 
 - Если в любом окне есть выделенный текст — программа копирует его (Ctrl+C),
   переводит через Claude API, и **автоматически вставляет перевод на место выделения** (Ctrl+V).
@@ -42,21 +42,25 @@ dotnet publish WinTrans -c Release -r win-x64 --self-contained false
 
 ## Использование
 
-1. При первом запуске окно можно вызвать хоткеем **Win+T**.
+1. При первом запуске окно можно вызвать хоткеем **Ctrl+Alt+T**.
 2. Вставьте свой API-ключ Claude (получить: https://console.anthropic.com/).
 3. Нажмите «Сохранить ключ».
 4. Выберите язык и стиль.
 5. Дальше:
-   - выделите текст где угодно → **Win+T** → перевод сам заменит выделение;
-   - либо нажмите **Win+T** без выделения, введите текст, нажмите «Перевести».
+   - выделите текст где угодно → **Ctrl+Alt+T** → перевод сам заменит выделение;
+   - либо нажмите **Ctrl+Alt+T** без выделения, введите текст, нажмите «Перевести».
 
 ## Смена хоткея
 
 В `MainWindow.xaml.cs`:
 
 ```csharp
-private const uint MOD_WIN = 0x0008;   // MOD_ALT=1, MOD_CONTROL=2, MOD_SHIFT=4, MOD_WIN=8
-private const uint VK_T   = 0x54;       // любой Virtual-Key Code
+// MOD_ALT=1, MOD_CONTROL=2, MOD_SHIFT=4, MOD_WIN=8
+private const uint MOD_ALT     = 0x0001;
+private const uint MOD_CONTROL = 0x0002;
+private const uint VK_T        = 0x54;   // любой Virtual-Key Code
+// ...
+_hotkeyManager.Register(MOD_CONTROL | MOD_ALT, VK_T);
 ```
 
 ## Смена модели Claude
