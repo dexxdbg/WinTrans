@@ -29,7 +29,10 @@ public class ClaudeApiClient
             $"Translate the user's text into: {targetLanguage}. " +
             $"Use this style: {style}. " +
             "Output ONLY the translation itself — no comments, no quotes, no explanations. " +
-            "Preserve formatting, line breaks, markdown and code blocks as-is.";
+            "CRITICAL: preserve the original formatting EXACTLY — every newline, empty line, " +
+            "indentation, bullet, numbered list, markdown element and code block must stay " +
+            "on the same line it was in the source. Do NOT merge paragraphs, do NOT collapse " +
+            "line breaks into spaces, do NOT re-wrap text. If the source has 3 lines, output 3 lines.";
 
         var payload = new
         {
@@ -73,6 +76,10 @@ public class ClaudeApiClient
                 sb.Append(t.GetString());
             }
         }
-        return sb.ToString().Trim();
+        // Нормализуем окончания строк в Windows-стиль, чтобы приложения вроде
+        // Notepad/Word корректно отображали переносы при вставке
+        var result = sb.ToString().Trim();
+        result = result.Replace("\r\n", "\n").Replace("\r", "\n").Replace("\n", "\r\n");
+        return result;
     }
 }
