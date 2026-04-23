@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "WinTrans (Unpackaged)": {
+      "commandName": "Project",
+      "nativeDebugging": false
+    }
+  }
+}
