@@ -14,7 +14,6 @@ public sealed partial class MainWindow : Window
     private readonly ClaudeApiClient _claude = new();
     private readonly SettingsStore _settings = new();
 
-    // Ctrl+Shift+T -> MOD_CONTROL (0x0002) | MOD_SHIFT (0x0004), VK_T = 0x54
     private const uint MOD_CONTROL = 0x0002;
     private const uint MOD_SHIFT = 0x0004;
     private const uint VK_T = 0x54;
@@ -24,11 +23,10 @@ public sealed partial class MainWindow : Window
         this.InitializeComponent();
         this.Title = "WinTrans";
 
-        // Перехватываем «Закрыть» (крестик) → прячем в трей вместо выхода
+        // x button hides to tray instead of closing
         this.AppWindow.Closing += AppWindow_Closing;
 
-        // Откладываем загрузку настроек на первый idle-тик диспетчера,
-        // чтобы не блокировать конструктор синхронным I/O до первого рендера.
+        // load settings after first render so we don't block the constructor with file i/o
         this.DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
         {
             var saved = _settings.Load();
@@ -46,7 +44,6 @@ public sealed partial class MainWindow : Window
     private void AppWindow_Closing(Microsoft.UI.Windowing.AppWindow sender,
         Microsoft.UI.Windowing.AppWindowClosingEventArgs args)
     {
-        // Не даём окну закрыться — вместо этого скрываем в трей
         args.Cancel = true;
         HideWindow();
     }
@@ -67,13 +64,11 @@ public sealed partial class MainWindow : Window
                               "комбинацию уже держит другое приложение.";
         }
 
-        // Создаём трей и подключаем к общему WndProc
         _tray = new TrayIcon(_hotkeyManager.Hwnd, "WinTrans — Ctrl+Shift+T");
         _tray.OpenRequested += ShowWindow;
         _tray.ExitRequested += ExitApp;
         _hotkeyManager.TrayMessageHandler = _tray.HandleMessage;
 
-        // Стартуем скрыто в трей
         HideWindow();
     }
 
@@ -86,28 +81,23 @@ public sealed partial class MainWindow : Window
 
     private async void OnHotkeyPressedAsync()
     {
-        // 1. Прячем наше окно, если оно видимо — иначе Ctrl+C уйдёт в него,
-        //    а не в исходное приложение
+        // hide our window first so ctrl+c goes to whatever the user had focused
         var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
         bool wasVisible = Win32.IsWindowVisible(hwnd);
         if (wasVisible)
         {
             HideWindow();
-            await Task.Delay(120); // дать фокусу вернуться предыдущему окну
+            await Task.Delay(120);
         }
 
-        // 2. Пробуем получить выделенный текст из активного окна
         string? selected = await ClipboardHelper.GetSelectedTextAsync();
 
-        // 3. Показываем наше окно
         ShowWindow();
 
         if (!string.IsNullOrWhiteSpace(selected))
         {
             SourceBox.Text = selected;
             StatusText.Text = "Получен выделенный текст, переводим...";
-            // Переводим и показываем результат. Окно остаётся открытым,
-            // ничего никуда автоматически не вставляем.
             await TranslateAsync(autoPasteBack: false);
         }
         else
@@ -182,8 +172,6 @@ public sealed partial class MainWindow : Window
         }
     }
 
-    // ===== UI handlers =====
-
     private void SaveKeyButton_Click(object sender, RoutedEventArgs e)
     {
         _settings.Save(new AppSettings
@@ -213,7 +201,7 @@ public sealed partial class MainWindow : Window
     private async void PasteReplaceButton_Click(object sender, RoutedEventArgs e)
     {
         if (string.IsNullOrEmpty(ResultBox.Text)) return;
-        // Кнопка — скрываем и вставляем, окно не возвращаем
+        // hide and paste, don't bring our window back
         await ClipboardHelper.SetTextAndPasteBackAsync(ResultBox.Text, this, restoreOurWindow: false);
     }
 

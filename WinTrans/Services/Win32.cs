@@ -13,7 +13,7 @@ internal static class Win32
     public const int WM_USER   = 0x0400;
     public const int WM_TRAYICON = WM_USER + 1;
 
-    // Мышь-события от Shell_NotifyIcon приходят в lParam
+    // mouse events that come in lParam from Shell_NotifyIcon
     public const int WM_LBUTTONUP      = 0x0202;
     public const int WM_RBUTTONUP      = 0x0205;
     public const int WM_LBUTTONDBLCLK  = 0x0203;
@@ -42,7 +42,6 @@ internal static class Win32
     [StructLayout(LayoutKind.Sequential)]
     public struct POINT { public int X; public int Y; }
 
-    // ---- Context menu ----
     [DllImport("user32.dll")]
     public static extern IntPtr CreatePopupMenu();
 
@@ -62,10 +61,9 @@ internal static class Win32
     public const uint TPM_RIGHTBUTTON = 0x0002;
     public const uint TPM_NONOTIFY    = 0x0080;
 
-    // ---- Tray icon (Shell_NotifyIconW) ----
-    public const int NIM_ADD    = 0x00000000;
-    public const int NIM_MODIFY = 0x00000001;
-    public const int NIM_DELETE = 0x00000002;
+    public const int NIM_ADD        = 0x00000000;
+    public const int NIM_MODIFY     = 0x00000001;
+    public const int NIM_DELETE     = 0x00000002;
     public const int NIM_SETVERSION = 0x00000004;
 
     public const uint NIF_MESSAGE = 0x00000001;
@@ -101,11 +99,10 @@ internal static class Win32
     [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
     public static extern bool Shell_NotifyIcon(int dwMessage, ref NOTIFYICONDATA lpdata);
 
-    // ---- Icon loading ----
     [DllImport("user32.dll", CharSet = CharSet.Unicode)]
     public static extern IntPtr LoadImage(IntPtr hinst, string lpszName, uint uType, int cxDesired, int cyDesired, uint fuLoad);
 
-    public const uint IMAGE_ICON = 1;
+    public const uint IMAGE_ICON      = 1;
     public const uint LR_LOADFROMFILE = 0x00000010;
     public const uint LR_DEFAULTSIZE  = 0x00000040;
     public const uint LR_SHARED       = 0x00008000;
@@ -120,7 +117,6 @@ internal static class Win32
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
     public static extern IntPtr GetModuleHandle(string? lpModuleName);
 
-    // --- SendInput для эмуляции Ctrl+C / Ctrl+V ---
     [StructLayout(LayoutKind.Sequential)]
     public struct INPUT
     {
@@ -161,7 +157,7 @@ internal static class Win32
         public ushort wParamL, wParamH;
     }
 
-    public const uint INPUT_KEYBOARD = 1;
+    public const uint INPUT_KEYBOARD  = 1;
     public const uint KEYEVENTF_KEYUP = 0x0002;
 
     public const ushort VK_CONTROL = 0x11;
@@ -174,13 +170,9 @@ internal static class Win32
     [DllImport("user32.dll", SetLastError = true)]
     public static extern uint SendInput(uint nInputs, INPUT[] pInputs, int cbSize);
 
-    /// <summary>
-    /// Отпускает «залипшие» модификаторы (хоткей всё ещё нажат, пока мы его обрабатываем)
-    /// и шлёт Ctrl+key.
-    /// </summary>
     public static void SendCtrlCombo(ushort key)
     {
-        // 1. отпускаем все модификаторы
+        // release any stuck modifiers left over from the hotkey
         var release = new INPUT[]
         {
             new() { type = INPUT_KEYBOARD, U = new InputUnion { ki = new KEYBDINPUT { wVk = VK_SHIFT,   dwFlags = KEYEVENTF_KEYUP } } },
@@ -190,7 +182,6 @@ internal static class Win32
         };
         SendInput((uint)release.Length, release, Marshal.SizeOf<INPUT>());
 
-        // 2. Ctrl+key
         var combo = new INPUT[]
         {
             new() { type = INPUT_KEYBOARD, U = new InputUnion { ki = new KEYBDINPUT { wVk = VK_CONTROL } } },
@@ -200,7 +191,4 @@ internal static class Win32
         };
         SendInput((uint)combo.Length, combo, Marshal.SizeOf<INPUT>());
     }
-
-    // backward compat
-    public static void SendKeyCombo(ushort modifier, ushort key) => SendCtrlCombo(key);
 }

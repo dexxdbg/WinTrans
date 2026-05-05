@@ -9,8 +9,7 @@ public static class Program
     [STAThread]
     public static int Main(string[] args)
     {
-        // Нужно для self-contained single-file сборки Windows App SDK —
-        // рантайм ищет свои нативки относительно этого пути
+        // needed so the sdk can find its native dlls when running as single-file exe
         Environment.SetEnvironmentVariable(
             "MICROSOFT_WINDOWSAPPRUNTIME_BASE_DIRECTORY",
             AppContext.BaseDirectory);

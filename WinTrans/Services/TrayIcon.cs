@@ -6,7 +6,6 @@ public class TrayIcon : IDisposable
 {
     private const uint TRAY_ID = 1;
 
-    // Команды контекстного меню
     public const uint CMD_OPEN = 1001;
     public const uint CMD_EXIT = 1002;
 
@@ -20,8 +19,7 @@ public class TrayIcon : IDisposable
     {
         _hwnd = hwnd;
 
-        // Берём иконку из самого exe, если не вышло — системную по умолчанию
-        // Environment.ProcessPath — быстрее, чем Process.GetCurrentProcess().MainModule?.FileName
+        // try to grab the icon from the exe, fall back to default system icon
         var hInst = Win32.GetModuleHandle(null);
         IntPtr hIcon = IntPtr.Zero;
         try
@@ -53,13 +51,9 @@ public class TrayIcon : IDisposable
         }
     }
 
-    /// <summary>
-    /// Должен вызываться из WndProc при uMsg == WM_TRAYICON.
-    /// Возвращает true если сообщение обработано.
-    /// </summary>
     public bool HandleMessage(IntPtr wParam, IntPtr lParam)
     {
-        // Нам прилетает LOWORD(lParam) = событие мыши
+        // lParam low word is the mouse event
         uint mouseMsg = (uint)(lParam.ToInt64() & 0xFFFF);
 
         switch (mouseMsg)
@@ -89,8 +83,7 @@ public class TrayIcon : IDisposable
 
             Win32.GetCursorPos(out var pt);
 
-            // Обязательно для popup-меню из notify icon: окно должно быть в форграунде,
-            // иначе меню не закроется по клику вне.
+            // window must be foreground or the menu won't close when clicking outside
             Win32.SetForegroundWindow(_hwnd);
 
             int cmd = Win32.TrackPopupMenuEx(

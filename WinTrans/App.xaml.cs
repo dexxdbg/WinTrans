@@ -20,9 +20,8 @@ public partial class App : Application
     {
         MainAppWindow = new MainWindow();
 
-        // Активируем и тут же прячем — иначе HWND не готов ловить WM_HOTKEY.
-        // Вспышки не должно быть т.к. Activate + SW_HIDE идут подряд до первого рендера.
+        // activate first so the hwnd exists, then init hotkey which hides the window
         MainAppWindow.Activate();
-        MainAppWindow.InitializeHotkey(); // регистрирует хоткей, трей и HideWindow()
+        MainAppWindow.InitializeHotkey();
     }
 }

@@ -5,14 +5,9 @@ using Microsoft.UI.Xaml;
 
 namespace WinTrans.Services;
 
-/// <summary>
-/// Субклассирует HWND окна WinUI3, слушает WM_HOTKEY и WM_TRAYICON,
-/// даёт управление RegisterHotKey и (опционально) трею.
-/// </summary>
 public class HotkeyManager : IDisposable
 {
     public event Action? HotkeyPressed;
-    /// <summary>Вызывается ДО диспатча — в момент прихода системного сообщения трея.</summary>
     public Func<IntPtr, IntPtr, bool>? TrayMessageHandler;
 
     private const int HOTKEY_ID = 0xB00B;

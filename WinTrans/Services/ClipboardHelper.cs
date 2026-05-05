@@ -7,11 +7,7 @@ namespace WinTrans.Services;
 
 public static class ClipboardHelper
 {
-    /// <summary>
-    /// ВАЖНО: вызывать, когда фокус ещё у исходного окна (наше окно скрыто).
-    /// Сохраняет текущее содержимое буфера, шлёт Ctrl+C,
-    /// читает выделенный текст, возвращает буфер обратно.
-    /// </summary>
+    // call this only when our window is hidden and the previous app still has focus
     public static async Task<string?> GetSelectedTextAsync()
     {
         string? previous = null;
@@ -21,19 +17,17 @@ public static class ClipboardHelper
             if (old.Contains(StandardDataFormats.Text))
                 previous = await old.GetTextAsync();
         }
-        catch { /* ignore */ }
+        catch { }
 
-        // Чистим, чтобы отличить «ничего не выделено» от старого содержимого
+        // clear so we can tell if ctrl+c actually copied something
         try { Clipboard.Clear(); } catch { }
 
-        // Даём фокус успеть вернуться исходному окну и модификаторам хоткея —
-        // отпуститься естественным путём
+        // wait for focus to return to the target window and for hotkey modifiers to release
         await Task.Delay(120);
 
-        // Эмулируем Ctrl+C (SendCtrlCombo сам отпустит залипшие Shift/Alt/Win/Ctrl)
         Win32.SendCtrlCombo(Win32.VK_C);
 
-        // Ждём пока буфер обновится
+        // give the target app time to write to clipboard
         await Task.Delay(200);
 
         string? selected = null;
@@ -45,8 +39,7 @@ public static class ClipboardHelper
         }
         catch { }
 
-        // Восстанавливаем предыдущее содержимое буфера (с небольшой задержкой,
-        // чтобы не перебить наш только что прочитанный selected)
+        // put back whatever was in the clipboard before
         if (!string.IsNullOrEmpty(previous))
         {
             try
@@ -61,30 +54,21 @@ public static class ClipboardHelper
         return selected;
     }
 
-    /// <summary>
-    /// Кладёт переведённый текст в буфер, временно прячет наше окно,
-    /// шлёт Ctrl+V предыдущему окну, и (если restoreOurWindow=true) возвращает
-    /// наше окно обратно — чтобы пользователь продолжил видеть перевод.
-    /// </summary>
     public static async Task SetTextAndPasteBackAsync(string text, Window ourWindow,
         bool restoreOurWindow = true)
     {
-        // 1. В буфер
         var dp = new DataPackage();
         dp.SetText(text);
         Clipboard.SetContent(dp);
 
-        // 2. Прячем своё окно, чтобы Ctrl+V ушёл в исходное приложение
+        // hide so ctrl+v goes to the app behind us
         var ourHwnd = WinRT.Interop.WindowNative.GetWindowHandle(ourWindow);
         Win32.ShowWindow(ourHwnd, Win32.SW_HIDE);
 
-        // 3. Задержка — система возвращает фокус предыдущему окну
         await Task.Delay(150);
 
-        // 4. Ctrl+V в предыдущее окно
         Win32.SendCtrlCombo(Win32.VK_V);
 
-        // 5. Возвращаем наше окно (по желанию)
         if (restoreOurWindow)
         {
             await Task.Delay(150);

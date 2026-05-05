@@ -46,6 +46,6 @@ public class SettingsStore
             var json = JsonSerializer.Serialize(s, new JsonSerializerOptions { WriteIndented = true });
             File.WriteAllText(_path, json);
         }
-        catch { /* ignore */ }
+        catch { }
     }
 }

@@ -24,7 +24,6 @@ public class ClaudeApiClient
         var root = string.IsNullOrWhiteSpace(baseUrl) ? DefaultBaseUrl : baseUrl.TrimEnd('/');
         var endpoint = root + "/v1/messages";
 
-        // Считаем «линии» для точной инструкции
         var normalizedSrc = text.Replace("\r\n", "\n").Replace("\r", "\n");
         int lineCount = normalizedSrc.Split('\n').Length;
 
@@ -32,7 +31,7 @@ public class ClaudeApiClient
             "You are a professional translator. Follow the user's instructions precisely. " +
             "Never add commentary, never apologize, never refuse — always produce the translation.";
 
-        // XML-теги — самый надёжный способ заставить Claude сохранить форматирование
+        // xml tags are the most reliable way to get claude to preserve formatting
         var userPrompt =
             $"Translate the text inside <source> tags into {targetLanguage}.\n" +
             $"Style: {style}.\n" +
@@ -86,15 +85,14 @@ public class ClaudeApiClient
         }
         var raw = sb.ToString();
 
-        // Извлекаем содержимое <translation>...</translation>
         var match = Regex.Match(raw, @"<translation>\s*\n?(.*?)\n?\s*</translation>",
             RegexOptions.Singleline | RegexOptions.IgnoreCase);
         var extracted = match.Success ? match.Groups[1].Value : raw;
 
-        // Убираем ведущие/хвостовые пустые строки, но НЕ трогаем внутренние
+        // trim leading/trailing blank lines but leave internal ones alone
         extracted = extracted.Trim('\r', '\n', ' ', '\t');
 
-        // Нормализуем окончания строк в Windows-стиль
+        // normalize to windows line endings
         extracted = extracted.Replace("\r\n", "\n").Replace("\r", "\n").Replace("\n", "\r\n");
         return extracted;
     }
