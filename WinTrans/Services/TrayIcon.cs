@@ -21,11 +21,12 @@ public class TrayIcon : IDisposable
         _hwnd = hwnd;
 
         // Берём иконку из самого exe, если не вышло — системную по умолчанию
+        // Environment.ProcessPath — быстрее, чем Process.GetCurrentProcess().MainModule?.FileName
         var hInst = Win32.GetModuleHandle(null);
         IntPtr hIcon = IntPtr.Zero;
         try
         {
-            var exe = System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName;
+            var exe = Environment.ProcessPath;
             if (!string.IsNullOrEmpty(exe))
                 hIcon = Win32.ExtractIcon(hInst, exe, 0);
         }

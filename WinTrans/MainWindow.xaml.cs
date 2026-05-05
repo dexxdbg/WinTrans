@@ -24,25 +24,23 @@ public sealed partial class MainWindow : Window
         this.InitializeComponent();
         this.Title = "WinTrans";
 
-        // Подгружаем сохранённые настройки
-        var saved = _settings.Load();
-        if (!string.IsNullOrEmpty(saved.ApiKey))
-            ApiKeyBox.Password = saved.ApiKey;
-        if (!string.IsNullOrWhiteSpace(saved.BaseUrl))
-            BaseUrlBox.Text = saved.BaseUrl;
-        if (saved.LanguageIndex >= 0 && saved.LanguageIndex < LanguageBox.Items.Count)
-            LanguageBox.SelectedIndex = saved.LanguageIndex;
-        if (saved.StyleIndex >= 0 && saved.StyleIndex < StyleBox.Items.Count)
-            StyleBox.SelectedIndex = saved.StyleIndex;
-
         // Перехватываем «Закрыть» (крестик) → прячем в трей вместо выхода
         this.AppWindow.Closing += AppWindow_Closing;
 
-        this.Closed += (s, e) =>
+        // Откладываем загрузку настроек на первый idle-тик диспетчера,
+        // чтобы не блокировать конструктор синхронным I/O до первого рендера.
+        this.DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
         {
-            _tray?.Dispose();
-            _hotkeyManager?.Dispose();
-        };
+            var saved = _settings.Load();
+            if (!string.IsNullOrEmpty(saved.ApiKey))
+                ApiKeyBox.Password = saved.ApiKey;
+            if (!string.IsNullOrWhiteSpace(saved.BaseUrl))
+                BaseUrlBox.Text = saved.BaseUrl;
+            if (saved.LanguageIndex >= 0 && saved.LanguageIndex < LanguageBox.Items.Count)
+                LanguageBox.SelectedIndex = saved.LanguageIndex;
+            if (saved.StyleIndex >= 0 && saved.StyleIndex < StyleBox.Items.Count)
+                StyleBox.SelectedIndex = saved.StyleIndex;
+        });
     }
 
     private void AppWindow_Closing(Microsoft.UI.Windowing.AppWindow sender,
